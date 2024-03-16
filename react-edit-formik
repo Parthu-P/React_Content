@@ -1,55 +1,51 @@
 import axios from "axios";
 import { useFormik } from "formik";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 function EditClass() {
+  const [classData, setClassData] = useState({});
   const { classId } = useParams();
 
-  const [initialValues, setInitialValues] = useState({
-    classId: 0,
-    name: "",
-    code: "",
-    updatedDate: new Date().toISOString().split('T')[0], // Format as yyyy-mm-dd
-    createdDate: new Date().toISOString().split('T')[0], // Format as yyyy-mm-dd
-  });
-
-  const onSubmit = async (values) => {
-    try {
-      await axios.put(`http://localhost:8080/api/class/update/${classId}`, values);
-      // Optionally, you can navigate or show a success message here
-    } catch (error) {
-      console.error("Error updating class:", error);
-      // Handle error here, e.g., show an error message to the user
-    }
-  };
-
   useEffect(() => {
-    const loadClass = async () => {
-      try {
-        const result = await axios.get(`http://localhost:8080/api/class/update/${classId}`);
-        setInitialValues(result.data);
-      } catch (error) {
-        console.error("Error loading class:", error);
-        // Handle error here, e.g., show an error message to the user
-      }
-    };
+    LoadClasses();
+  }, [classId]); // Include classId as a dependency
 
-    loadClass();
-  }, [classId]);
+  function LoadClasses() {
+    axios
+      .get(`http://localhost:8080/api/class/fetch/${classId}`)
+      .then((response) => {
+        setClassData(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching class:", error);
+      });
+  }
 
   const formik = useFormik({
-    initialValues,
-    onSubmit,
+    initialValues: {
+      classId: classData.classId || 0,
+      name: classData.name || "",
+      code: classData.code || "",
+      createdDate: classData.createdDate || new Date(),
+      updatedDate: classData.updatedDate || new Date(),
+    },
+    onSubmit: (values) => { // Use values instead of clas
+      axios
+        .put(`http://localhost:8080/api/class/fetch/${classId}`, values)
+        .then((response) => {
+          console.log("Class updated:", response.data);
+        })
+        .catch((error) => {
+          console.error("Error updating class:", error);
+        });
+    },
   });
 
   return (
     <div className="container-fluid">
-      <form
-        className="bg-dark text-white p-2 mb-2 w-45"
-        onSubmit={formik.handleSubmit}
-      >
-        <div className="mb-3 row ">
+      <form className="bg-dark text-white p-2 mb-2 w-45 " onSubmit={formik.handleSubmit}>
+        <div className="mb-3 row  ">
           <label className="col-sm-1 col-form-label text-bold">Id</label>
           <div className="col-sm-6">
             <input
@@ -62,57 +58,11 @@ function EditClass() {
             />
           </div>
         </div>
-        <div className="mb-3 row">
-          <label className="col-sm-1 col-form-label text-bold">ClassName</label>
-          <div className="col-sm-6">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter ClassName"
-              name="name"
-              value={formik.values.name}
-              onChange={formik.handleChange}
-            />
-          </div>
+        {/* Rest of the form fields */}
+        <div>
+          <button type="submit" className="btn btn-primary me-3">Update</button>
+          <Link to="/viewclasses" className="btn btn-warning">Cancel</Link>
         </div>
-        <div className="mb-3 row">
-          <label className="col-sm-1 col-form-label text-bold">Code</label>
-          <div className="col-sm-6">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Code"
-              name="code"
-              value={formik.values.code}
-              onChange={formik.handleChange}
-            />
-          </div>
-        </div>
-        <div className="mb-3 row">
-          <label className="col-sm-1 col-form-label text-bold">Create</label>
-          <div className="col-sm-6">
-            <input
-              type="date"
-              className="form-control"
-              name="createdDate"
-              value={formik.values.createdDate}
-              onChange={formik.handleChange}
-            />
-          </div>
-        </div>
-        <div className="mb-3 row">
-          <label className="col-sm-1 col-form-label text-bold">Update</label>
-          <div className="col-sm-6">
-            <input
-              type="date"
-              className="form-control mb-2"
-              name="updatedDate"
-              value={formik.values.updatedDate}
-              onChange={formik.handleChange}
-            />
-          </div>
-        </div>
-        <button type="submit" className="btn btn-primary">Update</button>
       </form>
     </div>
   );
